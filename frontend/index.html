@@ -1,0 +1,312 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <title>Sistema de Folha de Pagamento</title>
+    <style>
+       
+        body { font-family: sans-serif; margin: 20px; }
+        .container { display: flex; flex-direction: column; gap: 20px; }
+        .card { border: 1px solid #000; padding: 15px; background-color: #f9f9f9; }
+        .hidden { display: none; }
+        table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+        table, th, td { border: 1px solid #000; }
+        th, td { padding: 8px; text-align: left; }
+        label { font-weight: bold; display: inline-block; width: 180px; margin-top: 5px; }
+        input, select { margin-bottom: 5px; }
+        button { margin-top: 10px; padding: 5px 10px; cursor: pointer; }
+        .erro { color: red; font-weight: bold; }
+    </style>
+</head>
+<body>
+
+    <h1>Sistema de Folha de Pagamento</h1>
+
+    <div class="container">
+        
+        <div class="card">
+            <h2>Cadastrar / Editar Colaborador</h2>
+            <form id="formColaborador">
+                <input type="hidden" id="editIndex" value="-1">
+                
+                <label>Matrícula:</label> 
+                <input type="text" id="matricula" required><br>
+                
+                <label>Nome:</label> 
+                <input type="text" id="nome" required><br>
+                
+                <label>Salário Base (R$):</label> 
+                <input type="number" id="salarioBase" step="0.01" min="0" required><br>
+
+                <label>Tipo de Colaborador:</label>
+                <select id="tipo" onchange="mudarCamposTipo()">
+                    <option value="padrao">Padrão</option>
+                    <option value="comissionado">Comissionado</option>
+                    <option value="producao">Por Produção</option>
+                </select><br>
+
+                
+                <div id="camposComissionado" class="hidden">
+                    <label>Valor das Vendas (R$):</label> 
+                    <input type="number" id="vendas" step="0.01" min="0" value="0"><br>
+                    
+                    <label>Percentual de Comissão (%):</label> 
+                    <input type="number" id="comissao" step="0.01" min="0" value="0"><br>
+                </div>
+
+               
+                <div id="camposProducao" class="hidden">
+                    <label>Quantidade Produzida:</label> 
+                    <input type="number" id="qtdProduzida" min="0" value="0"><br>
+                    
+                    <label>Valor por Unidade (R$):</label> 
+                    <input type="number" id="valorUnidade" step="0.01" min="0" value="0"><br>
+                </div>
+
+                <span id="msgErro" class="erro"></span><br>
+                <button type="button" onclick="salvarColaborador()">Salvar Colaborador</button>
+                <button type="button" onclick="limparFormulario()">Cancelar/Limpar</button>
+            </form>
+        </div>
+
+  
+        <div class="card">
+            <h2>Consulta de Colaboradores</h2>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Matrícula</th>
+                        <th>Nome</th>
+                        <th>Tipo</th>
+                        <th>Salário Base</th>
+                        <th>Ações</th>
+                    </tr>
+                </thead>
+                <tbody id="tabelaColaboradores">
+                   
+                </tbody>
+            </table>
+        </div>
+
+      
+        <div class="card">
+            <h2>Geração da Folha de Pagamento</h2>
+            <button onclick="gerarFolha()">Calcular e Gerar Folha</button>
+            
+            <div id="areaRelatorio" class="hidden" style="margin-top: 15px;">
+                <h3>Relatório de Folha de Pagamento (Individual)</h3>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Matrícula</th>
+                            <th>Nome</th>
+                            <th>Tipo</th>
+                            <th>Salário Base</th>
+                            <th>Adicionais</th>
+                            <th>Salário Final</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tabelaFolha">
+                    </tbody>
+                </table>
+
+                <h3>Relatório Resumido</h3>
+                <ul>
+                    <li><strong>Quantidade de colaboradores:</strong> <span id="resumoQtd">0</span></li>
+                    <li><strong>Total Comissionado:</strong> R$ <span id="resumoTotalComissionado">0.00</span></li>
+                    <li><strong>Total Produção:</strong> R$ <span id="resumoTotalProducao">0.00</span></li>
+                    <li><strong>VALOR TOTAL DA FOLHA:</strong> R$ <span id="resumoTotalFolha">0.00</span></li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        
+        let colaboradores = [];
+
+      
+        function mudarCamposTipo() {
+            const tipo = document.getElementById('tipo').value;
+            document.getElementById('camposComissionado').classList.add('hidden');
+            document.getElementById('camposProducao').classList.add('hidden');
+
+            if (tipo === 'comissionado') {
+                document.getElementById('camposComissionado').classList.remove('hidden');
+            } else if (tipo === 'producao') {
+                document.getElementById('camposProducao').classList.remove('hidden');
+            }
+        }
+
+        function salvarColaborador() {
+            const editIndex = document.getElementById('editIndex').value;
+            const matricula = document.getElementById('matricula').value.trim();
+            const nome = document.getElementById('nome').value.trim();
+            const salarioBase = parseFloat(document.getElementById('salarioBase').value);
+            const tipo = document.getElementById('tipo').value;
+            const msgErro = document.getElementById('msgErro');
+
+           
+            if (!matricula || !nome) {
+                msgErro.textContent = "Matrícula e Nome são obrigatórios.";
+                return;
+            }
+            if (isNaN(salarioBase) || salarioBase < 0) {
+                msgErro.textContent = "Salário base não pode ser negativo ou vazio.";
+                return;
+            }
+
+           
+            const indexExistente = colaboradores.findIndex(c => c.matricula === matricula);
+            if (indexExistente !== -1 && indexExistente.toString() !== editIndex) {
+                msgErro.textContent = "Esta matrícula já está cadastrada.";
+                return;
+            }
+
+            msgErro.textContent = "";
+
+          
+            let obj = { matricula, nome, salarioBase, tipo };
+
+            if (tipo === 'comissionado') {
+                const vendas = parseFloat(document.getElementById('vendas').value) || 0;
+                const comissao = parseFloat(document.getElementById('comissao').value) || 0;
+                if (vendas < 0 || comissao < 0) {
+                    msgErro.textContent = "Vendas e Comissão não podem ser negativas.";
+                    return;
+                }
+                obj.vendas = vendas;
+                obj.comissao = comissao;
+            } else if (tipo === 'producao') {
+                const qtdProduzida = parseFloat(document.getElementById('qtdProduzida').value) || 0;
+                const valorUnidade = parseFloat(document.getElementById('valorUnidade').value) || 0;
+                if (qtdProduzida < 0 || valorUnidade < 0) {
+                    msgErro.textContent = "Quantidade e Valor Unitário não podem ser negativos.";
+                    return;
+                }
+                obj.qtdProduzida = qtdProduzida;
+                obj.valorUnidade = valorUnidade;
+            }
+
+            if (editIndex === "-1") {
+                colaboradores.push(obj);
+            } else {
+                colaboradores[editIndex] = obj;
+            }
+
+            limparFormulario();
+            atualizarTabelaConsulta();
+        }
+
+        function limparFormulario() {
+            document.getElementById('formColaborador').reset();
+            document.getElementById('editIndex').value = "-1";
+            document.getElementById('msgErro').textContent = "";
+            document.getElementById('matricula').disabled = false;
+            mudarCamposTipo();
+        }
+
+        function atualizarTabelaConsulta() {
+            const tbody = document.getElementById('tabelaColaboradores');
+            tbody.innerHTML = "";
+
+            colaboradores.forEach((c, index) => {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td>${c.matricula}</td>
+                    <td>${c.nome}</td>
+                    <td>${c.tipo}</td>
+                    <td>R$ ${c.salarioBase.toFixed(2)}</td>
+                    <td>
+                        <button onclick="editarColaborador(${index})">Editar</button>
+                        <button onclick="excluirColaborador(${index})">Excluir</button>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        function editarColaborador(index) {
+            const c = colaboradores[index];
+            document.getElementById('editIndex').value = index;
+            document.getElementById('matricula').value = c.matricula;
+            document.getElementById('matricula').disabled = true; 
+            document.getElementById('nome').value = c.nome;
+            document.getElementById('salarioBase').value = c.salarioBase;
+            document.getElementById('tipo').value = c.tipo;
+            
+            mudarCamposTipo();
+
+            if (c.tipo === 'comissionado') {
+                document.getElementById('vendas').value = c.vendas;
+                document.getElementById('comissao').value = c.comissao;
+            } else if (c.tipo === 'producao') {
+                document.getElementById('qtdProduzida').value = c.qtdProduzida;
+                document.getElementById('valorUnidade').value = c.valorUnidade;
+            }
+        }
+
+        function excluirColaborador(index) {
+            if (confirm("Tem certeza que deseja excluir?")) {
+                colaboradores.splice(index, 1);
+                atualizarTabelaConsulta();
+                document.getElementById('areaRelatorio').classList.add('hidden'); 
+            }
+        }
+
+        function gerarFolha() {
+            if (colaboradores.length === 0) {
+                alert("Nenhum colaborador cadastrado.");
+                return;
+            }
+
+            const tbody = document.getElementById('tabelaFolha');
+            tbody.innerHTML = "";
+
+            let totalGeral = 0;
+            let totalPadrao = 0;
+            let totalComissionado = 0;
+            let totalProducao = 0;
+
+            colaboradores.forEach(c => {
+                let salarioFinal = 0;
+                let adicionais = 0;
+
+
+                if (c.tipo === 'padrao') {
+                    salarioFinal = c.salarioBase;
+                } else if (c.tipo === 'comissionado') {
+                    adicionais = c.vendas * (c.comissao / 100); 
+                    salarioFinal = c.salarioBase + adicionais;
+                } else if (c.tipo === 'producao') {
+                    adicionais = c.qtdProduzida * c.valorUnidade;
+                    salarioFinal = c.salarioBase + adicionais;
+                }
+
+
+                totalGeral += salarioFinal;
+                if (c.tipo === 'padrao') totalPadrao += salarioFinal;
+                if (c.tipo === 'comissionado') totalComissionado += salarioFinal;
+                if (c.tipo === 'producao') totalProducao += salarioFinal;
+
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td>${c.matricula}</td>
+                    <td>${c.nome}</td>
+                    <td>${c.tipo}</td>
+                    <td>R$ ${c.salarioBase.toFixed(2)}</td>
+                    <td>R$ ${adicionais.toFixed(2)}</td>
+                    <td><strong>R$ ${salarioFinal.toFixed(2)}</strong></td>
+                `;
+                tbody.appendChild(tr);
+            });
+
+            document.getElementById('resumoQtd').textContent = colaboradores.length;
+            document.getElementById('resumoTotalProducao').textContent = totalProducao.toFixed(2);
+            document.getElementById('resumoTotalFolha').textContent = totalGeral.toFixed(2);
+
+            document.getElementById('areaRelatorio').classList.remove('hidden');
+        }
+    </script>
+</body>
+</html>
