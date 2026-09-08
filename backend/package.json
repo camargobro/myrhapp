@@ -1,0 +1,14 @@
+{
+  "name": "meu-projeto",
+  "version": "1.0.0",
+  "description": "Meu servidor Express",
+  "type": "module",
+  "main": "index.js",
+  "scripts": {
+    "dev": "nodemon index.js"
+  },
+  "dependencies": {
+    "express": "^5.2.1",
+    "nodemon": "^3.1.14"
+  }
+}
