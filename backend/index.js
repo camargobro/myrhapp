@@ -1,12 +1,13 @@
 import express from 'express';
-
+import colaboradorRouter from './routes/colaboradorRouter.js';
+import folhaPagamentoRouter from './routes/folhaPagamentoRouter.js';
 const app = express();
 const PORT = 3000;
-
-app.get('/', (req, res) => {
-  res.send('Olá! O servidor Express está rodando com sucesso usando ES Modules!');
-});
 
 app.listen(PORT, () => {
   console.log(`Servidor rodando na porta ${PORT}`);
 });
+
+app.use(express.json());
+app.use('/colaboradores', colaboradorRouter);
+app.use('/folha', folhaPagamentoRouter);
