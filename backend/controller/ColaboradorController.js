@@ -29,7 +29,7 @@ export async function postColaborador(req, res){
         db.push(colaborador);
         res.status(201).send({ message: "Colaborador criado com sucesso." });
     } catch (error) {
-        res.status(500).send({error: error.message});
+        res.status(400).send({error: error.message});
     }
 }   
 

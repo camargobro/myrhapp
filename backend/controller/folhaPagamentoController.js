@@ -30,8 +30,15 @@ export async function getResumoFolhaDePagamento(req, res) {
             acc.totalSalariosBase += colaborador.salarioBase;
             acc.totalAdicionais += salarioFinal - colaborador.salarioBase;
             acc.totalSalariosFinais += salarioFinal;
+            acc.totalPorTipo[colaborador.tipo] += salarioFinal;
             return acc;
-        }, { totalSalariosBase: 0, totalAdicionais: 0, totalSalariosFinais: 0 });
+        }, {
+            quantidadeColaboradores: db.length,
+            totalSalariosBase: 0,
+            totalAdicionais: 0,
+            totalSalariosFinais: 0,
+            totalPorTipo: { PADRAO: 0, COMISSIONADO: 0, PRODUCAO: 0 }
+        });
         res.send(resumo);
     } catch (error) {
         res.status(500).send({ error: error.message });
