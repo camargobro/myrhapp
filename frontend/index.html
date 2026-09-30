@@ -3,22 +3,48 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Folha de Pagamento</title>
+    <title>Paggo · Início</title>
+    <link rel="icon" type="image/png" href="favicon.png">
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
     <header class="topbar">
         <div class="topbar-inner">
-            <h1>Folha de Pagamento</h1>
-            <span id="statusApi" class="status-api">conectando…</span>
+            <a class="marca" href="#home">
+                <img src="logo-claro.png" alt="Paggo">
+            </a>
+            <nav class="topnav">
+                <a href="#home">Início</a>
+                <a href="#cadastro">Novo colaborador</a>
+                <a href="#colaboradores">Colaboradores</a>
+                <a href="#folha">Folha</a>
+            </nav>
         </div>
     </header>
 
     <main class="page">
 
-        <div class="grid">
-            <section class="panel">
+        <section class="home" id="view-home">
+            <img class="home-logo" src="logo.png" alt="Paggo">
+            <h2 class="home-titulo">Bem-vindo ao Paggo</h2>
+            <div class="cards">
+                <a class="card" href="#cadastro">
+                    <strong>Novo colaborador</strong>
+                    <span>Cadastre alguém da equipe em segundos.</span>
+                </a>
+                <a class="card" href="#colaboradores">
+                    <strong>Colaboradores</strong>
+                    <span id="homeContador">Consulte, edite ou exclua.</span>
+                </a>
+                <a class="card" href="#folha">
+                    <strong>Folha de pagamento</strong>
+                    <span>Calcule salários, adicionais e totais.</span>
+                </a>
+            </div>
+        </section>
+
+        <section class="panel view view-estreita hidden" id="view-cadastro">
                 <div class="panel-head">
                     <h2 id="tituloForm">Novo colaborador</h2>
                 </div>
@@ -45,7 +71,7 @@
                             <select id="tipo">
                                 <option value="PADRAO">Padrão</option>
                                 <option value="COMISSIONADO">Comissionado</option>
-                                <option value="PRODUCAO">Por produção</option>
+                                <option value="PRODUCAO">Produção</option>
                             </select>
                         </div>
                     </div>
@@ -81,11 +107,12 @@
                 </form>
             </section>
 
-            <section class="panel">
+        <section class="panel view hidden" id="view-colaboradores">
                 <div class="panel-head">
                     <h2>Colaboradores</h2>
                     <span id="contador" class="muted"></span>
                 </div>
+                <p id="msgLista" class="msg msg-auto" role="status"></p>
                 <div class="table-wrap">
                     <table>
                         <thead>
@@ -101,13 +128,14 @@
                     </table>
                 </div>
             </section>
-        </div>
 
-        <section class="panel">
+        <section class="panel view hidden" id="view-folha">
             <div class="panel-head">
                 <h2>Folha de pagamento</h2>
                 <button type="button" id="btnGerarFolha" class="btn btn-primary">Gerar folha</button>
             </div>
+
+            <p id="msgFolha" class="msg msg-auto" role="status"></p>
 
             <div id="areaRelatorio" class="hidden">
                 <div class="resumo">
@@ -152,6 +180,24 @@
 
     </main>
 
-    <script src="app.js"></script>
+    <div id="toasts" class="toasts" aria-live="polite"></div>
+
+    <dialog id="modalConfirmar" class="modal" aria-labelledby="tituloModal">
+        <form method="dialog">
+            <div class="modal-body">
+                <h2 id="tituloModal">Excluir colaborador?</h2>
+                <p class="modal-text">
+                    Tem certeza que deseja excluir <strong id="confirmarNome"></strong>?
+                    Essa ação não pode ser desfeita.
+                </p>
+            </div>
+            <div class="modal-actions">
+                <button type="submit" value="cancelar" class="btn" autofocus>Cancelar</button>
+                <button type="submit" value="confirmar" class="btn btn-danger">Excluir</button>
+            </div>
+        </form>
+    </dialog>
+
+    <script type="module" src="app.js"></script>
 </body>
 </html>
